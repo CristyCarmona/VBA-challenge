@@ -1,0 +1,176 @@
+Sub Stock_Data()
+
+    'Declaracion de variables
+    Dim lastRow, LastRow_Max_Min As Long
+    Dim Begin_Price, Close_Price, Yearly_Change, Total_Stock_Vol As Double
+    Dim Percentage_Change, Greatest_Percent_Value, Decrease_Percent_Value As Double
+    Dim Greatest_Volume_Value As Double
+    Dim Row_Tab_Sum As Integer
+    Dim Greatest_Percent_Tricker, Greatest_Volume_Tricker, Decrease_Percent_Tricker As String
+    Dim ws As Worksheet
+
+
+    For Each ws In Worksheets
+
+        'Poner encabezado en tabla resumen
+        ws.Range("I1").Value = "Ticker"
+        
+        ws.Range("J1").Value = "Yearly_Change"
+        ws.Range("K1").Value = "Percentage_Change"
+        ws.Range("L1").Value = "Total_Stock_Volume"
+        
+        'Poner encabezados en tabla resumen de minimos y maximos
+        
+        ws.Range("N2").Value = "Greatest % Increase"
+        ws.Range("N3").Value = "Greatest % Decrease"
+        ws.Range("N4").Value = "Greatest Total Volume"
+        ws.Range("O1").Value = "Ticker"
+        ws.Range("P1").Value = "Value"
+
+        '__________________________________________________________________________
+        'Desde aqui incia la construccion de la primer tabla resumen
+
+        'Inicializacion de variables
+        
+        Begin_Price = ws.Range("C2").Value
+        Total_Stock_Vol = ws.Range("G2").Value
+        Row_Tab_Sum = 2
+    
+        'Contar cuantas filas tiene la hoja de trabajo
+        
+        lastRow = ws.Cells(Rows.Count, 1).End(xlUp).Row
+ 
+    
+        'LLenado de tabla de sumarizacion
+        
+        For i = 2 To lastRow
+    
+            ' Este If es necesario por si hay algun set de datos en 0
+            
+            If Begin_Price <> 0 Then
+            
+                ' Este If es para el llenado
+        
+                If ws.Cells(i, 1).Value <> ws.Cells(i + 1, 1).Value Then
+            
+                    'Calcular valores a imprimir antes de que cambie de ticker
+                    
+                    Close_Price = ws.Cells(i, 6).Value
+                    Yearly_Change = Close_Price - Begin_Price
+                    
+                    Percentage_Change = Format(CDbl((Round((Yearly_Change / Begin_Price), 4))), "PERCENT")
+                    Total_Stock_Vol = Total_Stock_Vol + ws.Cells(i, 7).Value
+                    
+                    'Imprimir valores calculados en tabla de sumarizacion
+                    
+                    ws.Cells(Row_Tab_Sum, 9).Value = ws.Cells(i, 1).Value
+                    ws.Cells(Row_Tab_Sum, 10).Value = Yearly_Change
+                    ws.Cells(Row_Tab_Sum, 11).Value = Percentage_Change
+                    ws.Cells(Row_Tab_Sum, 12).Value = Total_Stock_Vol
+                    
+                    'Formato condicional para cambios positivos y negativos
+                
+                    If Yearly_Change <= 0 Then
+                        
+                        ws.Cells(Row_Tab_Sum, 10).Interior.ColorIndex = 3
+                    
+                    Else
+                    
+                        ws.Cells(Row_Tab_Sum, 10).Interior.ColorIndex = 4
+                        
+                    End If
+                
+                
+                    'Aumento del contador de fila en la tabla resumen
+                    
+                    Row_Tab_Sum = Row_Tab_Sum + 1
+                    
+                    
+                    'Inicializacion de variables para nuevo ticker
+                    
+                    Begin_Price = ws.Cells(i + 1, 3).Value
+                    Total_Stock_Vol = ws.Cells(i + 1, 7).Value
+                
+                
+                Else
+                    'Sumarizar el total del volumen
+                
+                    Total_Stock_Vol = Total_Stock_Vol + ws.Cells(i, 7).Value
+                
+                End If
+        
+            Else
+                Begin_Price = ws.Cells(i + 1, 3).Value
+        
+            End If
+    
+        Next i
+    
+        'Aqui termina la construccion de la primer tabla resumen
+        '_________________________________________________________________________________________
+        
+        'Aqui inicia la tabla resumen de minimos y maximos----
+
+
+
+        ' Ultima fila de la primer tabla resumen
+            
+        LastRow_Max_Min = ws.Cells(Rows.Count, 9).End(xlUp).Row
+        
+        ' Calculo de maximos y minimos
+        
+        Greatest_Percent_Value = CDbl(WorksheetFunction.Max(ws.Range("K2:K" & LastRow_Max_Min)))
+        Decrease_Percent_Value = CDbl(WorksheetFunction.Min(ws.Range("K2:K" & LastRow_Max_Min)))
+        Greatest_Volume_Value = WorksheetFunction.Max(ws.Range("L2:L" & LastRow_Max_Min))
+        
+        ' Inicializar variable de conteo para obtener tickers correspondientes a max y min
+        i = 3
+        
+        For i = 3 To LastRow_Max_Min
+        
+            'Buscar el ticker del porcentaje minimo y maximo
+     
+            If ws.Cells(i, 11).Value = Greatest_Percent_Value Then
+            
+                Greatest_Percent_Tricker = ws.Cells(i, 9).Value
+                
+            
+            ElseIf ws.Cells(i, 11).Value = Decrease_Percent_Value Then
+                
+                Decrease_Percent_Tricker = ws.Cells(i, 9).Value
+                        
+            End If
+            
+            ' Buscar el ticker del Total de volumen maximo
+     
+            If ws.Cells(i, 12).Value = Greatest_Volume_Value Then
+            
+                Greatest_Volume_Tricker = ws.Cells(i, 9).Value
+                       
+            End If
+        
+        Next i
+        
+                
+        ' Llenar la tabla de resumen maximos y minimos
+        
+        ws.Range("O2").Value = Greatest_Percent_Tricker
+        ws.Range("O3").Value = Decrease_Percent_Tricker
+        ws.Range("O4").Value = Greatest_Volume_Tricker
+    
+        ws.Range("P2").Value = Format(Greatest_Percent_Value, "PERCENT")
+        ws.Range("P3").Value = Format(Decrease_Percent_Value, "PERCENT")
+        ws.Range("P4").Value = Greatest_Volume_Value
+    
+        '________________________________________________________________________________________
+            
+        ' Ajustar el ancho de las columnas que se acaban de llenar antes de pasar a la sig. hoja
+        
+        ws.Columns("I:P").AutoFit
+        ws.Range("O2:P4").BorderAround _
+        LineStyle:=xlContinuous, Weight:=xlThick, Color:=RGB(12, 3, 1)
+   
+    Next ws
+
+
+End Sub
